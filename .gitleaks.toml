@@ -16,4 +16,4 @@ id = "generic-api-key"
   condition = "AND"
   paths = ['''(^|/)whatsapp-bot/\.env\.example$''']
   regexTarget = "secret"
-  regexes = ['''^EVOLUTION_INSTANCE$''']
+  regexes = ['''^EVOLUTION_INSTANCE=ofertas$''']
