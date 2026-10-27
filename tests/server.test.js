@@ -9,7 +9,7 @@ const { createApp } = require('../src/server');
 
 async function boot({ password = '', client = null } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srv-'));
-  const cfg = { appId: '', secret: '', endpoint: '', port: 0, host: '127.0.0.1', panelPassword: password, sessionSecret: 'segredo-de-teste', dataDir: dir, imagesDir: path.join(dir, 'images'), dbFile: ':memory:' };
+  const cfg = { appId: '', secret: '', endpoint: '', port: 0, host: '127.0.0.1', panelPassword: password, sessionSecret: 'test-secret-32-bytes-long-1234567890', dataDir: dir, imagesDir: path.join(dir, 'images'), dbFile: ':memory:' };
   const { app, db } = createApp({ cfg, db: dbm.open(':memory:'), client });
   const server = await new Promise(r => { const s = app.listen(0, '127.0.0.1', () => r(s)); });
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -81,15 +81,15 @@ test('CSRF: POST sem o cabeçalho do painel é recusado', async () => {
 });
 
 test('com senha: API e imagens exigem login; senha errada falha; limite de tentativas; cookie HttpOnly/SameSite', async () => {
-  const s = await boot({ password: 'abc123' });
+  const s = await boot({ password: 'abc123-long-test-password' });
   try {
     assert.equal((await s.call('/api/offers')).status, 401);
     assert.equal((await s.call('/api/manual', { method: 'POST', body: {} })).status, 401);
     assert.equal((await s.call('/api/manual/1', { method: 'PUT', body: {} })).status, 401);
     assert.equal((await s.call('/api/offers/1/duplicate', { method: 'POST' })).status, 401);
     assert.equal((await s.call('/imagens/qualquer.jpg')).status, 401);
-    assert.equal((await s.call('/api/login', { method: 'POST', body: { password: 'errada' } })).status, 401);
-    const ok = await s.call('/api/login', { method: 'POST', body: { password: 'abc123' } });
+    assert.equal((await s.call('/api/login', { method: 'POST', body: { password: 'errada-long-test-password' } })).status, 401);
+    const ok = await s.call('/api/login', { method: 'POST', body: { password: 'abc123-long-test-password' } });
     assert.equal(ok.status, 200);
     const setCookie = ok.headers.get('set-cookie');
     assert.match(setCookie, /HttpOnly/); assert.match(setCookie, /SameSite=Strict/);
@@ -100,12 +100,12 @@ test('com senha: API e imagens exigem login; senha errada falha; limite de tenta
 });
 
 test('bloqueio após muitas senhas erradas', async () => {
-  const s = await boot({ password: 'abc123' });
+  const s = await boot({ password: 'abc123-long-test-password' });
   try {
     let last;
-    for (let i = 0; i < 6; i++) last = await s.call('/api/login', { method: 'POST', body: { password: 'x' + i } });
+    for (let i = 0; i < 6; i++) last = await s.call('/api/login', { method: 'POST', body: { password: 'x-long-test-password' + i } });
     assert.equal(last.status, 429);
-    assert.equal((await s.call('/api/login', { method: 'POST', body: { password: 'abc123' } })).status, 429);
+    assert.equal((await s.call('/api/login', { method: 'POST', body: { password: 'abc123-long-test-password' } })).status, 429);
   } finally { s.close(); }
 });
 

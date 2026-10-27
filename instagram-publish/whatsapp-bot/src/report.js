@@ -46,6 +46,11 @@ export class BotReport {
  }
  state(status, nextSendAt) { this.data.status = status; if (nextSendAt !== undefined) this.data.nextSendAt = nextSendAt; this.flush(); }
  event(event) {
+  if (event.type === 'instagram_story') {
+   this.data.instagramStories ||= [];
+   this.data.instagramStories.unshift({ at: this.now(), key: String(event.key || '').slice(0,64), status: ['published','retryable','blocked','uncertain','failed','disabled'].includes(event.status) ? event.status : 'unknown', error: /^[a-zA-Z0-9_]+$/.test(event.error || '') ? event.error : null });
+   this.data.instagramStories = this.data.instagramStories.slice(0,200); this.flush(); return;
+  }
   // This report counts WhatsApp delivery events only. Instagram outcomes are
   // logged by their publisher and must not become WhatsApp preparation failures.
   if (!['sent', 'send_failed', 'preparation_failed'].includes(event.type)) return;

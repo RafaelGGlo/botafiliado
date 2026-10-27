@@ -14,10 +14,10 @@ const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const root = path.join(project, 'whatsapp-bot');
 try {
   if (Number(process.versions.node.split('.')[0]) < 24) throw Error('Use Node.js 24 ou superior.');
-  const entry = path.join(project, 'instagram-publish/whatsapp-bot/src/index.js');
+  const entry = path.join(project, 'instagram-publish/whatsapp-bot/src/bootstrap.js');
   const envFile = path.join(root, '.env');
   if (!fs.existsSync(entry) || !fs.existsSync(envFile)) throw Error('Arquivos ausentes. Mantenha o BAT na pasta original do projeto.');
-  const env = { ...process.env, ...parseEnv(fs.readFileSync(envFile, 'utf8')), INSTAGRAM_PROJECT_ROOT: project, DASHBOARD_ENABLED: 'true' };
+  const env = { ...parseEnv(fs.readFileSync(envFile, 'utf8')), ...process.env, INSTAGRAM_PROJECT_ROOT: project, DASHBOARD_ENABLED: 'true' };
   // Reuse the cooperative shutdown before starting the same service in the terminal.
   await import('./encerrar-bots.mjs');
   if (process.exitCode) throw Error('Nao foi possivel encerrar o servico anterior.');

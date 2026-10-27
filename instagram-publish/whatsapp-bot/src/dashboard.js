@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './runtime-env.js';
 import { readReport } from './report.js';
 import { botRuntime, requestBotStop } from './dashboard-stop.js';
 import { DEFAULT_OFFER_FILTERS } from '../dashboard/filters.js';

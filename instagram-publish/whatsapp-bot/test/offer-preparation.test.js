@@ -23,7 +23,7 @@ function fixture(t) {
     json: async () => ({ data: { productOfferV2: { nodes: [product(1), product(2)], pageInfo: { hasNextPage: false } } } }),
   }) });
   const offers = () => search({ isDeferred: id => cooldown.isDeferred(id) });
-  const failPhoto = async url => downloadImage(url, async () => ({ ok: false, headers: new Headers() }));
+  const failPhoto = async url => downloadImage(url, async () => { throw Error('Image unavailable'); });
   return { cooldown, offers, file, now, advance: ms => { time += ms; }, failPhoto };
 }
 

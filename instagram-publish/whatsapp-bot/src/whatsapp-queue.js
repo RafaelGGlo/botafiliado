@@ -9,23 +9,32 @@ export function saveJson(file, data) {
  fs.renameSync(file + '.tmp', file);
 }
 export class WhatsAppQueue {
- constructor(file, { store, ttlMs, now = Date.now }) {
-  this.file = file; this.store = store; this.ttlMs = ttlMs; this.now = now; this.busy = false;
+ constructor(file, { store, ttlMs, now = Date.now, maxBytes = 64 * 1024 * 1024 }) {
+  this.file = file; this.store = store; this.ttlMs = ttlMs; this.now = now; this.busy = false; this.maxBytes = maxBytes;
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1024) throw Error("Invalid queue byte budget");
+  if (fs.existsSync(file) && fs.statSync(file).size > maxBytes) throw Error("Fila excede limite de bytes; reconciliar antes de iniciar.");
   this.jobs = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
   if (!Array.isArray(this.jobs)) throw Error('Invalid WhatsApp queue');
   for (const job of this.jobs) if (job.state === 'sending') { job.state = 'uncertain'; job.reason = 'INTERRUPTED'; }
   this.save();
  }
- save() { saveJson(this.file, this.jobs); }
+ save() {
+  // Receipts remain, media is removed once it cannot be sent again.
+  for (const j of this.jobs) if (!['queued','sending'].includes(j.state)) delete j.image;
+  if (Buffer.byteLength(JSON.stringify(this.jobs)) > this.maxBytes) throw Error('Fila excede limite de bytes.');
+  saveJson(this.file, this.jobs);
+ }
  enqueue(deal, image, caption, groups) {
   const at = this.now();
-  this.jobs = this.jobs.filter(j => ['queued','sending','uncertain'].includes(j.state) || at - j.createdAt < this.ttlMs);
+  const next = this.jobs.filter(j => ['queued','sending','uncertain'].includes(j.state) || at - j.createdAt < this.ttlMs);
   for (const group of groups) {
-   if (this.store.isDealSentToGroup(deal.id, group) || this.jobs.some(j => j.deal.id === deal.id && j.group === group && (j.state === 'uncertain' || at-j.createdAt < this.ttlMs))) continue;
-   if (this.jobs.filter(j => j.state === 'queued').length >= 200) throw Error('Fila WhatsApp cheia.');
-   this.jobs.push({ id: randomUUID(), deal, image: image.toString('base64'), caption, group, state: 'queued', createdAt: at });
+   if (this.store.isDealSentToGroup(deal.id, group) || next.some(j => j.deal.id === deal.id && j.group === group && (j.state === 'uncertain' || at-j.createdAt < this.ttlMs))) continue;
+   if (next.filter(j => j.state === 'queued').length >= 200) throw Error('Fila WhatsApp cheia.');
+   const job = { id: randomUUID(), deal, image: image.toString('base64'), caption, group, state: 'queued', createdAt: at };
+   if (Buffer.byteLength(JSON.stringify([...next,job])) > this.maxBytes) throw Error('Fila cheia: limite de bytes atingido.');
+   next.push(job);
   }
-  this.save();
+  this.jobs = next; this.save();
  }
  history() { return this.jobs.slice(-200).reverse().map(({ image, deal, caption, ...job }) => ({ ...job, dealId: deal.id, title: deal.title, price: deal.price })); }
  async drain({ canSend, selected, deliver }) {

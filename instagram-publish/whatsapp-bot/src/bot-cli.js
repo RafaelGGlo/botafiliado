@@ -1,11 +1,11 @@
-import 'dotenv/config';
+import './runtime-env.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { lockStatus } from './bot-lock.js';
 import { BotControl } from './control.js';
-const root = fileURLToPath(new URL('../', import.meta.url)); process.chdir(root);
+const root = process.cwd();
 const command = process.argv[2], lock = './bot.lock';
 try {
  const status = lockStatus(lock);
@@ -13,7 +13,7 @@ try {
  else if (command === 'start') {
   if (status.state === 'running') throw Error('O bot já está ativo.');
   const out = fs.openSync('./bot-output.log','a',0o600), err = fs.openSync('./bot-error.log','a',0o600);
-  const child = spawn(process.execPath, [path.join(root,'src/index.js')], { cwd: root, detached: true, windowsHide: true, stdio: ['ignore',out,err] });
+  const child = spawn(process.execPath, [fileURLToPath(new URL('./bootstrap.js', import.meta.url))], { cwd: root, detached: true, windowsHide: true, stdio: ['ignore',out,err] });
   child.on('error', error => { console.error(error.message); process.exitCode = 1; }); child.unref(); fs.closeSync(out); fs.closeSync(err);
   let found;
   for(let i=0;i<50;i++) { await new Promise(resolve => setTimeout(resolve,200)); found=lockStatus(lock); if(found.state==='running' && found.pid===child.pid) break; }

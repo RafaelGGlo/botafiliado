@@ -9,7 +9,8 @@ function load() {
     port: Number(process.env.PORT || 3000),
     host: process.env.HOST || '127.0.0.1',
     panelPassword: process.env.PANEL_PASSWORD || '',
-    sessionSecret: process.env.SESSION_SECRET || 'dev-only-secret-change-me',
+    sessionSecret: process.env.SESSION_SECRET || '',
+    production: process.env.NODE_ENV === 'production',
     dataDir,
     imagesDir: path.join(dataDir, 'images'),
     dbFile: path.join(dataDir, 'ofertas.db'),
@@ -17,4 +18,10 @@ function load() {
   };
 }
 
-module.exports = { load };
+function validate(cfg) {
+  if (!['127.0.0.1', 'localhost', '::1'].includes(cfg.host) && !cfg.panelPassword) throw Error('Configure PANEL_PASSWORD para acesso externo.');
+  if (cfg.production && !cfg.panelPassword) throw Error('PANEL_PASSWORD obrigatória em produção, inclusive em loopback.');
+  if (cfg.panelPassword && (cfg.panelPassword === 'troque-esta-senha' || cfg.panelPassword.length < 12)) throw Error('Use PANEL_PASSWORD própria, com pelo menos 12 caracteres.');
+  if (cfg.panelPassword && (Buffer.byteLength(cfg.sessionSecret || '', 'utf8') < 32 || ['dev-only-secret-change-me', 'troque-por-um-texto-aleatorio-bem-longo'].includes(cfg.sessionSecret))) throw Error('Configure SESSION_SECRET aleatório com pelo menos 32 bytes.');
+}
+module.exports = { load, validate };

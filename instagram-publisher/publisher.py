@@ -99,7 +99,13 @@ def verify(client, story_id, url, state=STATE):
         return False
 
 
+def live_allowed():
+    return os.getenv('INSTAGRAPI_LIVE_APPROVED') == 'true' and os.getenv('INSTAGRAM_TEST_MODE') == 'false'
+
+
 def publish(payload, client_factory=authenticated, session=None, state=None):
+    if not live_allowed():
+        return {'status': 'disabled', 'error': 'publication_not_approved'}
     from instagrapi.types import StoryLink
     from PIL import Image
     state = state or STATE

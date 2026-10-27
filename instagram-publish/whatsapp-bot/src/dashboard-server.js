@@ -41,6 +41,7 @@ export async function startDashboard({ getReport, port = 3210, now = Date.now, o
    try { const bytes = instagram.publicImage(mediaMatch[1]); response.writeHead(200, { 'Content-Type': 'image/jpeg' }); response.end(request.method === 'HEAD' ? undefined : bytes); }
    catch { response.writeHead(404); response.end(); } return;
   }
+  if (['forwarded','x-forwarded-for','x-forwarded-host','x-forwarded-proto','x-real-ip'].some(h => request.headers[h] !== undefined)) { response.writeHead(403); response.end(); return; }
   if (!['127.0.0.1:' + activePort, 'localhost:' + activePort].includes(request.headers.host)) { response.writeHead(403); response.end('Acesso local necessário.'); return; }
   try {
    const pathname = new URL(request.url, 'http://127.0.0.1').pathname;

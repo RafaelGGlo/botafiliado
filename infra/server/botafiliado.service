@@ -1,0 +1,34 @@
+[Unit]
+Description=Botafiliado WhatsApp e Instagram
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=botafiliado
+Group=botafiliado
+WorkingDirectory=/opt/botafiliado/whatsapp-bot
+ExecStart=/usr/bin/node /opt/botafiliado/instagram-publish/whatsapp-bot/src/bootstrap.js
+Environment=NODE_ENV=production
+Environment=PYTHONUNBUFFERED=1
+UMask=0077
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=240
+KillSignal=SIGTERM
+KillMode=mixed
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/botafiliado/whatsapp-bot
+ReadWritePaths=/opt/botafiliado/instagram-publisher/state
+MemoryMax=1G
+TasksMax=128
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
