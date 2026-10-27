@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './runtime-env.js';
 import cron from 'node-cron';
 import path from 'node:path';
 import { configuredCategories, configuredOfferMode, configuredMinSales } from './offer-filter.js';

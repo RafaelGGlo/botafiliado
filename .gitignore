@@ -40,3 +40,6 @@ whatsapp-bot/whatsapp_groups.json*
 **/setup-audit.json
 **/.git
 
+
+**/whatsapp_queue.json*
+**/whatsapp_groups.json*

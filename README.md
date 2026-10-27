@@ -1,3 +1,5 @@
+> Atualização de segurança: veja [DEPLOY-SEGURANCA.md](DEPLOY-SEGURANCA.md) para instalação, SSH, migração de estado, serviço e recuperação. Stories imediatos exigem INSTAGRAPI_LIVE_APPROVED=true e INSTAGRAM_TEST_MODE=false.
+
 # Painel de Ofertas Shopee → WhatsApp
 
 Stories imediatos apos confirmacao do WhatsApp: veja [configuracao local do instagrapi](instagram-publisher/README.md). O launcher Windows usa `instagram-publish/whatsapp-bot/src/index.js`; esse fluxo agora publica uma unica Story com link nativo por oferta confirmada, com historico persistente e retries independentes do WhatsApp.
@@ -9,11 +11,12 @@ O bot automático está em [`whatsapp-bot/`](whatsapp-bot/README.md), separado d
 Para executá-lo no Windows:
 
 ```powershell
-cd whatsapp-bot
-Copy-Item .env.example .env
-npm.cmd ci
-# Preencha .env com as credenciais da Shopee e os IDs dos grupos.
-npm.cmd start
+npm.cmd ci --ignore-scripts
+npm.cmd --prefix instagram-publish ci --ignore-scripts
+npm.cmd --prefix instagram-publish/whatsapp-bot ci --ignore-scripts
+if (!(Test-Path whatsapp-bot/.env)) { Copy-Item whatsapp-bot/.env.example whatsapp-bot/.env }
+# Preencha whatsapp-bot/.env; mantenha publicacao Instagram desligada no primeiro teste.
+node instagram-publish/whatsapp-bot/src/bootstrap.js
 ```
 
 O bot precisa permanecer ligado. Ctrl+C interrompe os envios. Não execute mais de uma instância na mesma pasta. A sessão, as credenciais e o histórico local não fazem parte do repositório.

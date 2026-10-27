@@ -2,12 +2,24 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 from urllib.parse import quote
 from PIL import Image
 import publisher
 
 
 class PublisherTests(unittest.TestCase):
+    def test_disabled_gates_never_authenticate_even_with_existing_session(self):
+        calls = []
+        session = self.state / 'session.json'
+        session.write_text('{}', encoding='utf8')
+        for values in ({'INSTAGRAPI_LIVE_APPROVED': 'false', 'INSTAGRAM_TEST_MODE': 'false'},
+                       {'INSTAGRAPI_LIVE_APPROVED': 'true', 'INSTAGRAM_TEST_MODE': 'true'}):
+            with patch.dict('os.environ', values):
+                result = publisher.publish(self.payload, lambda _: calls.append(1), session=session, state=self.state)
+                self.assertEqual(result['status'], 'disabled')
+        self.assertEqual(calls, [])
+
     def test_instagram_redirect_preserves_affiliate_url_and_original_parameters(self):
         expected = 'https://shope.ee/example?campaign=a&campaign=b'
         wrapped = 'https://l.instagram.com/?u=' + quote(expected + '&fbclid=instagram-click', safe='')
@@ -15,6 +27,9 @@ class PublisherTests(unittest.TestCase):
         self.assertFalse(publisher.link_matches(wrapped, expected.replace('campaign=b', 'campaign=c')))
         self.assertFalse(publisher.link_matches('https://other.example/?u=' + quote(expected, safe=''), expected))
     def setUp(self):
+        gates = patch.dict("os.environ", {"INSTAGRAPI_LIVE_APPROVED": "true", "INSTAGRAM_TEST_MODE": "false"})
+        gates.start()
+        self.addCleanup(gates.stop)
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.state = Path(self.temporary.name)

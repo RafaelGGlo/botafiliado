@@ -1,3 +1,4 @@
+import './runtime-env.js';
 import makeWASocket, { useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import qrcode from 'qrcode-terminal';
 import { connectEvolution } from './evolution.js';

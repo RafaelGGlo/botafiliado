@@ -6,7 +6,11 @@ import { createHash } from 'node:crypto';
 import { promotionalImage } from './instagram-image.js';
 
 const project = path.resolve(import.meta.dirname, '../../..');
+export function storyLiveAllowed(env = process.env) {
+ return env.INSTAGRAPI_LIVE_APPROVED === 'true' && env.INSTAGRAM_TEST_MODE === 'false';
+}
 export function pythonPublisher(payload, { env = process.env } = {}) {
+ if (!storyLiveAllowed(env)) return Promise.resolve({ status: 'disabled', error: 'publication_not_approved' });
  return new Promise(resolve => {
   const child = spawn(env.INSTAGRAM_PYTHON || path.join(project, 'instagram-publisher/.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python'),
    [path.join(project, 'instagram-publisher/publisher.py'), 'publish'],
@@ -23,7 +27,7 @@ export function pythonPublisher(payload, { env = process.env } = {}) {
 }
 
 export function createStoryPublisher({ dir = path.join(project, 'instagram-publisher/state'), publish = pythonPublisher,
- makeImage = promotionalImage, now = Date.now, onStatus = () => {}, recoverInterrupted = false } = {}) {
+ makeImage = promotionalImage, now = Date.now, onStatus = () => {}, recoverInterrupted = false, env = process.env } = {}) {
  fs.mkdirSync(dir, { recursive: true });
  const db = new DatabaseSync(path.join(dir, 'outbox.sqlite'));
  db.exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
@@ -45,6 +49,7 @@ export function createStoryPublisher({ dir = path.join(project, 'instagram-publi
   return key;
  }
  async function attempt(key) {
+  if (!storyLiveAllowed(env)) return { status: 'disabled' };
   const row = db.prepare('SELECT * FROM stories WHERE key=?').get(key);
   if (!row || !['pending','retryable'].includes(row.status) || row.next_at > now() || row.attempts >= 3) return row;
   const claimed = db.prepare("UPDATE stories SET status='publishing',attempts=attempts+1 WHERE key=? AND status IN ('pending','retryable')").run(key);

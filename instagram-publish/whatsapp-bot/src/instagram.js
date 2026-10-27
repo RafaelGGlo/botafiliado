@@ -9,6 +9,7 @@ import { promotionalImage } from './instagram-image.js';
 import { hostInstagramImage } from './instagram-host.js';
 import { createManualFeed } from './manual-feed.js';
 import { createFlashSaleBeta } from './flash-sale-beta.js';
+import { stateRoot } from './runtime-paths.js';
 
 export function captionWithAffiliateLink(caption, link) {
  const text = String(caption).trim();
@@ -20,7 +21,7 @@ export function captionWithAffiliateLink(caption, link) {
 
 const defaults = { manualEnabled: true, autoEnabled: false, manualPublish: false, autoPublish: false, autoHour: 12, autoMinute: 0, autoDays: 7, autoFormat: 'feed' };
 const fail = message => { throw Error(message); };
-export function createInstagram({ file = path.resolve(import.meta.dirname, '../instagram.sqlite'), mediaDir = path.resolve(import.meta.dirname, '../instagram-media'), env = process.env, getOffers = readInstagramOffers, makeImage = promotionalImage, request = fetch, now = Date.now, feedOptions = {} } = {}) {
+export function createInstagram({ file = path.join(stateRoot, 'instagram.sqlite'), mediaDir = path.join(stateRoot, 'instagram-media'), env = process.env, getOffers = readInstagramOffers, makeImage = promotionalImage, request = fetch, now = Date.now, feedOptions = {} } = {}) {
  if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
  fs.mkdirSync(mediaDir, { recursive: true });
  const db = new DatabaseSync(file);

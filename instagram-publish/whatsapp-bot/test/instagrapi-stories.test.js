@@ -15,7 +15,7 @@ function fixture(t, { groups = ['a'], fail = false, results = [{ status: 'publis
  let clock = 0, sends = 0, publications = 0;
  const publish = async payload => { publications++; assert.equal(payload.affiliateUrl, offer.affiliateUrl); assert.equal(payload.price, offer.price); return results.shift() || { status: 'published', storyId: '456' }; };
  const makeImage = async (_offer, format, image) => { assert.equal(format, 'story'); assert.equal(image.toString(), 'same-image'); return image; };
- let stories = createStoryPublisher({ dir, publish, makeImage, now: () => clock });
+ let stories = createStoryPublisher({ env: { INSTAGRAPI_LIVE_APPROVED: "true", INSTAGRAM_TEST_MODE: "false" }, dir, publish, makeImage, now: () => clock });
  const store = new SentStore(path.join(dir, 'sent.json'), 1000000, () => clock);
  const broadcaster = () => createBroadcaster({ store, groups, minMs: 0, maxMs: 0,
   getSocket: () => ({ sendMessage: async () => { sends++; if (fail) throw Error('offline'); if (sends > 1 && groups.length > 1) assert.equal(publications, 1, 'Story attempted before next group'); return { key: { id: 'ack' } }; } }),
@@ -24,7 +24,7 @@ function fixture(t, { groups = ['a'], fail = false, results = [{ status: 'publis
  t.after(async () => { await stories.close(); fs.rmSync(dir, { recursive: true, force: true }); });
  return { send: () => broadcaster()(offer, Buffer.from('same-image'), 'same-caption'),
   counts: () => ({ sends, publications }), stories: () => stories, advance: () => { clock += 300000; },
-  restart: async () => { await stories.close(); stories = createStoryPublisher({ dir, publish, makeImage, now: () => clock }); } };
+  restart: async () => { await stories.close(); stories = createStoryPublisher({ env: { INSTAGRAPI_LIVE_APPROVED: "true", INSTAGRAM_TEST_MODE: "false" }, dir, publish, makeImage, now: () => clock }); } };
 }
 test('1. confirmed WhatsApp send immediately publishes one Story', async t => {
  const f = fixture(t); await f.send(); assert.deepEqual(f.counts(), { sends: 1, publications: 1 });
@@ -80,6 +80,6 @@ test('Story artwork is 9:16 with visual CTA aligned to native link geometry', as
  assert.ok(navy > 2000, 'CTA label remains legible');
 });
 test('missing Python reports safe retry without exposing environment secrets', async () => {
- const result = await pythonPublisher({}, { env: { INSTAGRAM_PYTHON: 'missing-python-command-for-test' } });
+ const result = await pythonPublisher({}, { env: { INSTAGRAPI_LIVE_APPROVED: 'true', INSTAGRAM_TEST_MODE: 'false', INSTAGRAM_PYTHON: 'missing-python-command-for-test' } });
  assert.deepEqual(result, { status: 'retryable', error: 'python_unavailable' });
 });

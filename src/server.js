@@ -55,6 +55,7 @@ function publicOffer(o) {
 }
 
 function createApp({ cfg = config.load(), db, client } = {}) {
+  config.validate(cfg);
   db = db || dbm.open(cfg.dbFile);
   fs.mkdirSync(cfg.imagesDir, { recursive: true });
   if (client === undefined) {
@@ -66,6 +67,10 @@ function createApp({ cfg = config.load(), db, client } = {}) {
 
   const app = express();
   app.disable('x-powered-by');
+  app.use((req, res, next) => {
+    if (['forwarded', 'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-real-ip'].some(h => req.headers[h] !== undefined)) return res.status(403).json({ error: 'Use acesso privado direto ao painel (SSH/VPN).' });
+    next();
+  });
 
   app.use((req, res, next) => {
     res.set({
@@ -77,8 +82,8 @@ function createApp({ cfg = config.load(), db, client } = {}) {
     next();
   });
   // Upload codificado em base64: limite maior apenas nas rotas de cadastro manual.
-  app.use('/api/manual', express.json({ limit: '9mb' }));
-  app.use(express.json({ limit: '100kb' }));
+  app.use('/api/manual', express.json({ limit: '9mb', inflate: false }));
+  app.use(express.json({ limit: '100kb', inflate: false }));
 
   // CSRF: ações que alteram dados exigem este cabeçalho (o cookie também é SameSite=Strict).
   app.use((req, res, next) => {
@@ -105,7 +110,7 @@ function createApp({ cfg = config.load(), db, client } = {}) {
       return res.status(401).json({ error: 'Senha incorreta.' });
     }
     limiter.reset(ip);
-    const secure = req.secure ? '; Secure' : '';
+    const secure = cfg.production || req.secure ? '; Secure' : '';
     res.set('Set-Cookie', `${auth.COOKIE}=${auth.makeToken(cfg.sessionSecret)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${auth.MAX_AGE_MS / 1000}${secure}`);
     res.json({ ok: true });
   });

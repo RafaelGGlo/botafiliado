@@ -17,7 +17,7 @@ const png = (w, h) => sharp({ create: { width: w, height: h, channels: 3, backgr
 test('manual: cadastro, persistência, edição, duplicação, revisão e publicação sem API', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'manual-offers-'));
   const file = path.join(dir, 'offers.db');
-  const cfg = { imagesDir: path.join(dir, 'images'), dbFile: file, panelPassword: '', sessionSecret: 'test' };
+  const cfg = { imagesDir: path.join(dir, 'images'), dbFile: file, host: '127.0.0.1', panelPassword: '', sessionSecret: 'test' };
   // Mesmo com cliente configurado, uma oferta manual nunca consulta a API.
   const client = { searchProducts() { throw new Error('API não deveria ser usada'); } };
   const { app, db } = createApp({ cfg, client });

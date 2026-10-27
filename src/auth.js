@@ -18,8 +18,9 @@ function makeToken(secret, now = Date.now()) {
 
 function tokenValid(secret, token, now = Date.now()) {
   if (!token || typeof token !== 'string') return false;
+  if (!/^\d{13}\.[a-f0-9]{64}$/.test(token)) return false;
   const [exp, sig] = token.split('.');
-  if (!exp || !sig || Number(exp) < now) return false;
+  if (Number(exp) < now || Number(exp) > now + MAX_AGE_MS) return false;
   const good = hmac(secret, exp);
   return sig.length === good.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(good));
 }
@@ -28,7 +29,7 @@ function parseCookies(header = '') {
   const out = {};
   for (const part of header.split(';')) {
     const i = part.indexOf('=');
-    if (i > 0) out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+    if (i > 0) { try { out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim()); } catch { /* Invalid cookie is unauthenticated. */ } }
   }
   return out;
 }

@@ -1,3 +1,5 @@
+> Segurança: publicação exige `INSTAGRAPI_LIVE_APPROVED=true` e `INSTAGRAM_TEST_MODE=false` no processo. O padrão bloqueia uploads, inclusive retries. Veja [implantação por SSH](../DEPLOY-SEGURANCA.md).
+
 # Instagram Stories via instagrapi
 
 Self-hosted, free Python publisher; no Storrito, paid provider, public image host or Meta Graph token is used in this WhatsApp-triggered flow.
