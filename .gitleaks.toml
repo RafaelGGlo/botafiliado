@@ -1,0 +1,19 @@
+title = "Botafiliado - default rules with narrow fixture exceptions"
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+  [[rules.allowlists]]
+  description = "Known synthetic session key in HTTP test fixtures, including historical commits"
+  condition = "AND"
+  paths = ['''(^|/)tests/server\.test\.js$''']
+  regexTarget = "secret"
+  regexes = ['''^test-secret-32-bytes-long-1234567890$''']
+
+  [[rules.allowlists]]
+  description = "Empty example key followed by the EVOLUTION_INSTANCE variable name (multiline false positive)"
+  condition = "AND"
+  paths = ['''(^|/)whatsapp-bot/\.env\.example$''']
+  regexTarget = "secret"
+  regexes = ['''^EVOLUTION_INSTANCE$''']
